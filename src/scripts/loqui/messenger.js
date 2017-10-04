@@ -75,7 +75,7 @@ var Messenger = {
     if (account.supports('avatarChange')) {
       account.connector.avatarSet(blob);
     } else {
-      Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'exclamation-sign', 3);
+      Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'warning', 3);
     }
   },
 
@@ -86,7 +86,7 @@ var Messenger = {
       var nick = $('section#me #nick input').val();
       account.connector.presence.set(null, status, nick);
     } else {
-      Lungo.Notification.error(_('Error'), _('NoWhenOffline'), 'exclamation-sign', 3);
+      Lungo.Notification.error(_('Error'), _('NoWhenOffline'), 'warning', 3);
     }
   },
 
@@ -142,7 +142,7 @@ var Messenger = {
       li.append(
         $('<span/>').addClass('caption').text(_('AccountSet' + key))
       ).append(
-        $('<div class="switch"><div class="ball"></div><img src="img/tick.svg" class="tick" /></div>')
+        $('<div class="switch"><div class="ball"></div><i class="material-icons">check</i></div>')
       );
 
       if (value.length > 1 && value[1]) {
@@ -175,7 +175,7 @@ var Messenger = {
       var chat = account.chats[ci];
       var cdate = new Date(chat.core.info.creation * 1000);
       var sdate = new Date(chat.core.info.subjectTime * 1000);
-      
+
       section[0].dataset.jid= jid;
       section[0].dataset.mine= (chat.core.info && chat.core.info.owner == account.core.fullJid);
       section.find('#card span.cdate').html(cdate.toDateString());
@@ -205,7 +205,7 @@ var Messenger = {
               participantLabel.append($('<i/>', {class:"material-icons"}).text("supervisor_account"));
             }
             if (participantJid === chat.core.info.subjectOwner) {
-              participantLabel.append($('<i/>', {class:"material-icons"}).text("title"));
+              participantLabel.append($('<i/>', {class:"material-icons"}).text("label"));
             }
             if (participantJid === chat.core.info.owner) {
               participantLabel.append($('<i/>', {class:"material-icons"}).text("star"));
@@ -221,6 +221,16 @@ var Messenger = {
             break;
           default:
             break;
+        }
+        if (label != _('Me')) {
+          participantLabel.bind('click', {jid: participantJid}, function(event) {
+            Chungo.Router.section('back');
+	    if (App.platform === "FirefoxOS")	// FirefoxOS needs the section back router twice!
+	    {
+	      Chungo.Router.section('back');
+	    }
+            account.chatGet(event.data.jid).show();
+          });
         }
         partUl.append(participantLabel);
       }
@@ -248,7 +258,7 @@ var Messenger = {
         li.append(
           $('<span/>').addClass('caption').text(_('AccountSet' + key))
         ).append(
-          $('<div class="switch"><div class="ball"></div><img src="img/tick.svg" class="tick" /></div>')
+          $('<div class="switch"><div class="ball"></div><i class="material-icons">check</i></div>')
         );
         li[0].dataset.value= (value.length > 1 ? value[0] : value);
         li.bind('click', accountSwitch);
@@ -302,10 +312,10 @@ var Messenger = {
           Lungo.Notification.success(_('ContactWasAdded', {name: name}), _('ContactWillAppear', {name: name}), 'check', 5);
         }
       } else {
-        Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'exclamation-sign', 3);
+        Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'warning', 3);
       }
     } else {
-      Lungo.Notification.error(_('Error'), _('NoWhenOffline'), 'exclamation-sign', 3);
+      Lungo.Notification.error(_('Error'), _('NoWhenOffline'), 'warning', 3);
     }
   },
 
@@ -339,13 +349,13 @@ var Messenger = {
           account.save();
           account.allRender();
           Lungo.Router.section('main');
-          Lungo.Notification.success(_('Removed'), null, 'remove', 3);
+          Lungo.Notification.success(_('Removed'), null, 'remove_circle_outline', 3);
         }
       } else {
-        Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'exclamation-sign', 3);
+        Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'warning', 3);
       }
     } else {
-      Lungo.Notification.error(_('Error'), _('NoWhenOffline'), 'exclamation-sign', 3);
+      Lungo.Notification.error(_('Error'), _('NoWhenOffline'), 'warning', 3);
     }
   },
 
@@ -369,11 +379,11 @@ var Messenger = {
           account.allRender();
           Lungo.Router.section('back');
           Lungo.Router.section('main');
-          Lungo.Notification.success(_('Removed'), null, 'trash', 3);
+          Lungo.Notification.success(_('Removed'), null, 'delete', 3);
         }
       }
     } else if (!force) {
-      Lungo.Notification.error(_('Error'), _('NoChatsForContact'), 'exclamation-sign', 3);
+      Lungo.Notification.error(_('Error'), _('NoChatsForContact'), 'warning', 3);
     }
   },
 
@@ -399,10 +409,10 @@ var Messenger = {
         account.allRender();
         Lungo.Router.section('back');
         Lungo.Router.section('main');
-        Lungo.Notification.success(_('Cleared'), null, 'trash', 3);
+        Lungo.Notification.success(_('Cleared'), null, 'delete', 3);
       }
     } else {
-      Lungo.Notification.error(_('Error'), _('NoChatsForContact'), 'exclamation-sign', 3);
+      Lungo.Notification.error(_('Error'), _('NoChatsForContact'), 'warning', 3);
     }
   },
 
@@ -432,7 +442,7 @@ var Messenger = {
       App.accounts.splice(accountIndex, 1);
       App.accountsCores.splice(accountIndex, 1);
       App.accounts = App.accounts;
-      Lungo.Notification.success(_('Wait'), _('WaitLong'), 'exclamation-sign', 3);
+      Lungo.Notification.success(_('Wait'), _('WaitLong'), 'warning', 3);
       setTimeout(function () {
         window.location.reload();
       }, 3000);

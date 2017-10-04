@@ -307,7 +307,7 @@ var Store = {
         req.onerror = function () {
           if (onerror) {
             onerror(this.error);
-            if(!quiet) Lungo.Notification.error(_('Error'), _('NoSDAccess'), 'cloud-download', 5);
+            if(!quiet) Lungo.Notification.error(_('Error'), _('NoSDAccess'), 'cloud_download', 5);
           }
         };
       } else {
@@ -331,14 +331,21 @@ var Store = {
         req.onerror = function () {
           if (onerror) {
             onerror(this.error);
-            if(!quiet) Lungo.Notification.error(_('Error'), _('NoSDAccess'), 'cloud-download', 5);
+            if(!quiet) Lungo.Notification.error(_('Error'), _('NoSDAccess'), 'cloud_download', 5);
           }
         };
       } else {
         if(!quiet) Tools.log('DS IS NOT SUPPORTED');
         Store.get('fakesdcard_' + path, function (value) {
           if (value) {
-            onsuccess(new Blob(value.content, {type: value.type}));
+            if (App.platform === "FirefoxOS") {
+            	//FirefoxOS
+				onsuccess(new Blob(value.content, {type: value.type}));
+			} else if(App.platform === "UbuntuTouch") {
+            	//Ubuntu Touch
+				//var input = value.content;
+				onsuccess(new Blob([value], {type: value.type}));
+            }
           } else {
             if (onerror) {
               onerror();
@@ -363,7 +370,7 @@ var Store = {
         req.onerror = function () {
           if (onerror) {
             onerror(this.error);
-            Lungo.Notification.error(_('Error'), _('NoSDAccess'), 'cloud-download', 5);
+            Lungo.Notification.error(_('Error'), _('NoSDAccess'), 'cloud_download', 5);
           }
         };
       } else {
@@ -402,7 +409,7 @@ var Store = {
         req.onerror= function(){
           if(onerror){
             onerror(this.error);
-            Lungo.Notification.error(_('Error'), _('NoSDAccess'), 'cloud-download', 5);
+            Lungo.Notification.error(_('Error'), _('NoSDAccess'), 'cloud_download', 5);
           }
         };
 

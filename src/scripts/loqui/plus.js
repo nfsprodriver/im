@@ -25,11 +25,12 @@ var Plus = {
     if (to && App.online && account.connector.connection.connected){
       if (account.supports('attention')) {
         account.connector.attentionSend(to);
+        //TODO make this works for UT
         window.navigator.vibrate([100,30,100,30,100,200,200,30,200,30,200,200,100,30,100,30,100]);
         App.audio('thunder');
         Tools.log('Sent a bolt to', to);
       } else {
-        Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'exclamation-sign');
+        Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'warning');
       }
     }
   },
@@ -42,16 +43,18 @@ var Plus = {
   emoji: function (emoji) {
     Messenger.add(emoji);
   },
-
+  
+  UTFileSendRegistered: false,
+  
+  UTVCardSendRegistered: false,
+  
   /**
    * Triggers a file pick [{MozActivity}]{@link external:System.MozActivity}
    */
   fileSend: function () {
-    var account = Accounts.current;
-    var fileTypes = [];
-    var to = $('section#chat')[0].dataset.jid;
-
-
+	var account = Accounts.current;
+	var fileTypes = [];
+	
     if (account.supports('imageSend')) {
       fileTypes = fileTypes.concat(['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/bmp']);
     }
@@ -64,40 +67,87 @@ var Plus = {
       fileTypes = fileTypes.concat(['audio/mpeg', 'audio/ogg', 'audio/mp4']);
     }
 
-    var e = new MozActivity({
-      name: 'pick',
-      data: {
-        type: fileTypes
-      }
-    });
+    if (App.platform === "FirefoxOS") {
+    	//FirefoxOS
+		var to = $('section#chat')[0].dataset.jid;
 
-    e.onsuccess = function () {
-      var blob = this.result.blob;
-      account.connector.fileSend(to, blob);
-    };
+    	var e = new MozActivity({
+	      name: 'pick',
+	      data: {
+	        type: fileTypes
+	      }
+	    });
+
+	    e.onsuccess = function () {
+	      var blob = this.result.blob;
+	      account.connector.fileSend(to, blob);
+	    };
+    } else if(App.platform === "UbuntuTouch") {
+    	//Ubuntu Touch
+    	$('#filesend_input').attr('accept', fileTypes);
+	    if(!Plus.UTFileSendRegistered) {
+	    	//File send handling for non FirefoxOS
+
+
+	    	$('#filesend_input').change(function() {
+				var to = $('section#chat')[0].dataset.jid;
+	    	    var image = document.getElementById('filesend_input').files[0];
+	    	    account.connector.fileSend(to, image);
+	    	});
+	    	Plus.UTFileSendRegistered = true;
+    	}
+	$('#filesend_input').trigger('click');
+    }
   },
 
   vcardSend: function () {
-    var account = Accounts.current;
-    var to = $('section#chat')[0].dataset.jid;
-
-    var e = new MozActivity({
-      name: 'pick',
-      data: {
-        type: 'webcontacts/tel'
-      }
-    });
-
-    e.onsuccess = function () {
-      var contact = this.result;
-      var name = Array.isArray(contact.name) ? contact.name[0] : contact.name;
-      var str = '';
-      ContactToVcard([contact], function (vcards, nCards) {
-        str += vcards;
-      }, function () {
-        account.connector.vcardSend(to, name, str);
-      }, 0, true);
-    };
+    if (App.platform === "FirefoxOS") {
+		var account = Accounts.current;
+		var to = $('section#chat')[0].dataset.jid;
+	    var e = new MozActivity({
+	      name: 'pick',
+	      data: {
+	        type: 'webcontacts/tel'
+	      }
+	    });
+	
+	    e.onsuccess = function () {
+	      var contact = this.result;
+	      var name = Array.isArray(contact.name) ? contact.name[0] : contact.name;
+	      var str = '';
+	      ContactToVcard([contact], function (vcards, nCards) {
+	        str += vcards;
+	      }, function () {
+	        account.connector.vcardSend(to, name, str);
+	      }, 0, true);
+	    };
+    } else if(App.platform === "UbuntuTouch") {
+    	//Ubuntu Touch
+	if(!Plus.UTVCardSendRegistered) {
+	    var account = Accounts.current;
+	    var to = $('section#chat')[0].dataset.jid;
+	    var name;
+	    var str = '';
+    		$('#vcardsend_input').change(function() {
+    			var vcardFiles = document.getElementById('vcardsend_input').files;
+    			if(vcardFiles.length > 0) {
+    				var vcard = vcardFiles[0];
+    				var fileReader = new FileReader();
+    				fileReader.onloadend = function() {
+    					VCF.parse(fileReader.result, function(vc) {
+						var c = vc.toJCard();
+						name = c.fn;
+					});
+					str = fileReader.result;
+					account.connector.vcardSend(to, name, str);
+				};
+    				fileReader.readAsText(vcard);
+    			}
+    		});
+    		Plus.UTVCardSendRegistered = true;
+    	}
+	$('#vcardsend_input').trigger('click');
+    }
   },
   
   locationSend: function () {
@@ -108,7 +158,7 @@ var Plus = {
         account.connector.locationSend(to, loc);
       });
     } else {
-      Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'exclamation-sign');
+      Lungo.Notification.error(_('NoSupport'), _('XMPPisBetter'), 'warning');
     }
   },
 

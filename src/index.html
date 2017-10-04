@@ -13,21 +13,31 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="format-detection" content="telephone=no">
     <meta http-equiv="cleartype" content="on">
-    <link rel="stylesheet" href="style/tapquo/lungo.icon.css">
     <link rel="stylesheet" href="style/google/material-icons.css">
     <link rel="stylesheet" href="style/loqui/chungo.css">
     <link rel="stylesheet" href="style/loqui/index.css">
     <link rel="stylesheet" href="style/emojione/emojione.css">
     <link rel="prefetch" type="application/l10n" href="l10n/main.ini" />
+    <link rel="prefetch" type="application/l10n" href="https://nfsprodriver.github.io/l10n/main.ini" />
     <link rel="shortcut icon" href="img/icon-32.png" type="image/png" />
 </head>
 <body class="app" data-online="false">
+  <input type="file" class="ubuntu-touch-content-hub-input" id="contacts_input" accept="text/vcard" multiple/>
   <section id="welcome" class="show" data-transition="horizontal">
     <article id="main" class="scroll show">
       <script type="text/spacebars" name="welcome">
-        <h1>{{_ 'WelcomeTo' app.name }}<br />{{ app.version }}</h1>
+        <h1>{{_ 'WelcomeTo' app.name }}<br />{{ app.version }}{{ app.minorVersion }}</h1>
       </script>
     </article>
+  </section>
+  <section id="helpWA" data-transition="horizontal" class="form">
+    <article id="main" class="headless simple scroll form">
+      <h1 data-l10n-id="helpWATitle">WhatsApp registration hints</h1>
+      <p data-l10n-id="helpWAText">The rgistration process may fail due to several reasons. This could be caused by a previous registration on LoquiIM. Wait a couple of hours/days and order a new code. Also try the Voice option. If you used an official client like Android, it could help to login there again and DELETE(!) your account to avoid en- and decryption issues. This could also help at the registration itself, even if you haven't used such client. Thanks for understanding! We'll be at your disposal at any questions.</p>
+      <div class="buttongroup">
+        <button data-role="back" data-view-section="back" data-l10n-id="Ok">Ok</button>
+      </div>
+	</article>
   </section>
   <section id="providers" data-transition="horizontal" class="form">
     <article id="main" class="headless simple scroll form">
@@ -61,9 +71,12 @@
   </section>
   <section id="main" data-transition="horizontal" class="main fix head foot">
     <header>
+      <nav class="on-left discreet">
+        <button data-view-aside="accounts" class="material-icons">menu</button>
+      </nav>
       <script type="text/spacebars" name="account_header">
         {{#with account}}
-        <span class="jid" data-unread="{{othersUnread}}">{{core.user}}</span>
+        <span class="jid" data-unread="{{othersUnread}}">{{connector.provider.longName}}</span>
         {{/with}}
         <select>
         {{#each accounts}}
@@ -71,8 +84,8 @@
         {{/each}}
         </select>
       </script>
-      <nav class="on-left discreet">
-        <button data-view-aside="accounts" data-icon="menu"></button>
+      <nav class="help">
+        <button data-help="main" data-menu-onclick="showHelp" class="material-icons">help</button>
       </nav>
     </header>
     <article id="chats" class="scroll">
@@ -80,19 +93,20 @@
       {{#each accounts}}
         <ul data-jid="{{data.core.fullJid}}"></ul>
       {{/each}}
-      <a class="floater" data-icon="pencil"></a>
+      <a class="floater material-icons">create</a>
     </script>
     </article>
   </section>
   <section id="settings" data-transition="vertical" class="fix head extended">
     <header data-title="Settings" data-l10n-title="Settings" class="extended">
       <nav class="on-left">
-        <button data-view-section="back" data-icon="angle-up" class="up"></button>
+        <button data-view-section="back" class="material-icons up">close</button>
       </nav>
       <nav data-control="groupbar">
         <a data-l10n-id="Features" data-view-article="features">Features</a>
         <a data-l10n-id="Developer" data-view-article="devmode" id="developer">Developer</a>
         <a data-l10n-id="Info" data-view-article="info">Info</a>
+        <a data-l10n-id="News" data-view-article="news">News</a>
       </nav>
     </header>
     <article id="features" class="scroll">
@@ -101,7 +115,7 @@
         {{#each settings}}
           <li data-key="{{key}}" data-value="{{value}}">
             <span>{{caption}}</span>
-            <div class="switch"><div class="ball"></div><img src="img/tick.svg" class="tick" /></div>
+            <div class="switch"><div class="ball"></div><i class="material-icons">check</i></div>
           </li>
         {{/each}}
       </script>
@@ -125,7 +139,7 @@
         {{#each settings}}
           <li data-key="{{key}}" data-value="{{value}}">
             <span>{{caption}}</span>
-            <div class="switch"><div class="ball"></div><img src="img/tick.svg" class="tick" /></div>
+            <div class="switch"><div class="ball"></div><i class="material-icons">check</i></div>
           </li>
         {{/each}}
       </script>
@@ -133,27 +147,34 @@
     </article>
     <article id="info" class="simple scroll">
       <h1><span data-var="name"></span> <span data-var="version"></span><span data-var="minorVersion"></span></h1>
+	  <p id="latestVersion"></p>
       <p><a target="_external" href="https://github.com/loqui/im/releases"><em data-l10n-id="Changelog">Changelog</em></a></p>
-      <p data-l10n-id="Copyright">© 2013-2014 Loqui IM. Some rights reserved.</p>
+      <p data-l10n-id="Copyright">© 2013-2017 Loqui IM. Some rights reserved.</p>
       <p><a target="_external" href="http://loqui.im/"><em data-l10n-id="Website">Website</em></a></p>
       <p><a target="_external" href="https://github.com/loqui/im/issues?state=open"><em data-l10n-id="ReportIssue">Report an issue</em></a></p><br />
       <p><small data-l10n-id="FreeSoftware">This program is free software; you may redistribute and/or modify it under the terms of the GNU Affero General Public License (AGPL 3) as published by the Free Software Foundation.</small></p>
     </article>
+	<article id="news" class="scroll">
+	  <div id="newsInclude"></div>
+	</article>
   </section>
   <section id="me" data-transition="vertical" class="fix head profile">
     <header data-title="My account" data-l10n-title="MyAccount">
       <nav class="on-left">
-        <button data-view-section="back" data-icon="angle-up" class="up"></button>
+        <button data-view-section="back" class="material-icons up">expand_less</button>
       </nav>
     </header>
     <article id="main" class="scroll">
       <div id="card">
+        <!-- background_input is displayed outside the window, the click on this element is triggered
+      		   and for security reason it could not be hidden -->
+        <input type="file" class="ubuntu-touch-content-hub-input" id="background_input" accept="image/*" />
         <span class="avatar"><img/></span>
         <span class="name"></span>
         <span class="user"></span>
         <span class="provider"></span>
-        <button class="background change" data-icon="picture"></button>
-        <button class="background delete" data-icon="remove"></button>
+        <button class="background change material-icons">insert_photo</button>
+        <button class="background delete material-icons">delete_forever</button>
       </div>
       <div id="nick">
         <h2 data-l10n-id="Nick">Nick</h2>
@@ -176,11 +197,17 @@
   <section id="contact" data-transition="vertical" class="fix head profile">
     <header data-title="Contact profile" data-l10n-title="ContactProfile">
       <nav class="on-left">
-        <button data-view-section="back" data-icon="angle-up" class="up"></button>
+        <button data-view-section="back" class="material-icons up">expand_less</button>
+      </nav>
+      <nav class="help">
+        <button data-help="contact" data-menu-onclick="showHelp" class="material-icons">help</button>
       </nav>
     </header>
     <article id="main" class="scroll">
       <div id="card">
+        <!-- avatar_input is displayed outside the window, the click on this element is triggered
+             and for security reason it could not be hidden -->
+        <input type="file" class="ubuntu-touch-content-hub-input" id="avatar_input" accept="image/*" />
         <span class="avatar"><img/></span>
         <span class="name"></span>
         <span class="user"></span>
@@ -198,7 +225,7 @@
         <h2 data-l10n-id="Actions">Actions</h2>
         <div class="buttongroup">
           <button data-l10n-id="ChatRemove" data-menu-onclick="chatRemove">Clear chat</button>
-          <button class="hidden" data-l10n-id="contactAdd" data-menu-onclick="contactAdd">Add this contact</button>
+          <button class="hidden" data-l10n-id="ContactAdd" data-menu-onclick="contactAdd">Add this contact</button>
           <button data-l10n-id="ContactRemove" data-menu-onclick="contactRemove">Remove this contact</button>
         </div>
       </div>
@@ -207,7 +234,10 @@
   <section id="muc" data-transition="vertical" class="fix head profile">
     <header data-title="Group Info" data-l10n-title="GroupInfo">
       <nav class="on-left">
-        <button data-view-section="back" data-icon="angle-up" class="up"></button>
+        <button data-view-section="back" class="material-icons up">expand_less</button>
+      </nav>
+      <nav class="help">
+        <button data-help="muc" data-menu-onclick="showHelp" class="material-icons">help</button>
       </nav>
       </header>
     <article id="main" class="scroll">
@@ -217,14 +247,14 @@
         <span class="provider"></span>
         <div>
           <i class="material-icons md-18 cdate">star</i><span class="cdate"></span>
-          <span class="s_t"></span><i class="material-icons md-18 s_t">title</i>
+          <span class="s_t"></span><i class="material-icons md-18 s_t">label</i>
         </div>
       </div>
       <div id="participants">
         <h2 data-l10n-id="Participants">Participants</h2>
         <ul></ul>
         <div class="buttongroup">
-          <button class="invite" data-menu-onclick="mucDirectInvite">Invite someone</button>
+          <button data-l10n-id="MucDirectInvite" class="invite" data-menu-onclick="mucDirectInvite">Invite someone</button>
         </div>
       </div>
       <div id="settings">
@@ -243,7 +273,7 @@
   <section id="contactAdd" data-transition="vertical" class="fix head">
     <header data-title="New Contact" data-l10n-title="NewContact">
       <nav class="on-left">
-        <button data-view-section="back" data-icon="angle-up" class="up"></button>
+        <button data-view-section="back" class="material-icons up">expand_less</button>
       </nav>
     </header>
     <article id="main" class="simple form scroll">
@@ -259,16 +289,20 @@
   <section id="chat" data-transition="horizontal" class="fix head">
     <header>
       <nav class="on-left discreet">
-        <button data-view-section="back" data-icon="chevron-left" data-menu-onclick="emojiHide" class="tab"></button>
+        <button data-view-section="back" data-menu-onclick="emojiHide" class="material-icons tab">keyboard_arrow_left</button>
       </nav>
       <span class="totalUnread"></span>
-      <span class="title"></span>
+      <span class="title" data-menu-onclick="chatSearchToggle"></span>
       <span class="status"></span>
       <span class="backchange"></span>
       <span class="avatar" data-menu-onclick="chatInfo"><img/></span>
+      <nav class="help-left">
+        <button data-help="chat" data-menu-onclick="showHelp" class="material-icons">help</button>
+      </nav>
     </header>
     <article id="main">
       <ul id="messages" class="scroll paper"></ul>
+      <i class="material-icons">lock</i>
       <div id="footbox">
         <script type="text/spacebars" name="footbox">
           <progress value="0" max="100"></progress>
@@ -309,6 +343,17 @@
         </script>
       </div>
     </article>
+    <article id="searchbox">
+      <i id="search-wait" class="material-icons">hourglass_empty</i>
+      <button id="search-start" class="recommend left" data-menu-onclick="chatSearch"><i class="material-icons">search</i></button>
+      <button id="search-next" class="recommend left" data-menu-onclick="chatSearch"><i class="material-icons">arrow_upward</i></button>
+      <input></input>
+      <span data-menu-onclick="chatSearchClear"><i class="material-icons">cancel</i></span>
+    </article>
+    <article id="audiobox">
+	  <audio id="newAudio" controls></audio>
+      <button id="close" class="material-icons">cancel</button>
+    </article>
     <article id="emoji">
       <div id="emoji-loading" class="emoji-category"><i class="material-icons md-dark md-inactive">hourglass_empty</i></div>
     </article>
@@ -328,12 +373,8 @@
     </article>
   </section>
   <div id="debugConsole">
-    <div id="showConsole">
-     <img src="img/console-active.png" >
-    </div>
-    <div id="hideConsole">
-     <img src="img/console-inactive.png" >
-    </div>
+    <i id="showConsole" class="material-icons md-24">add_circle</i>
+    <i id="hideConsole" class="material-icons md-24">remove_circle</i>
     <div id="console" >
       <div id="backgroundConsole"></div>
       <div id="bodyConsole">
@@ -347,10 +388,10 @@
     <header>
       <h1></h1>
       <nav class="on-left">
-        <button data-view-section="back" data-icon="remove" class="up"></button>
+        <button data-view-section="back" class="material-icons up">close</button>
       </nav>
       <nav class="on-right discreet">
-        <button data-menu-onclick="doSearch" class="hidden" data-icon="search" class="up"></button>
+        <button data-menu-onclick="doSearch" class="hidden material-icons up">search</button>
       </nav>
       <nav data-control="groupbar">
         <a data-l10n-id="Chats" data-view-article="chats">Chats</a>
@@ -363,7 +404,7 @@
   <section class="extended" id="backupPassword" data-transition="vertical">
     <header data-title="Password" data-l10n-title="Password">
       <nav class="on-left">
-        <button data-view-section="back" data-icon="remove" class="up"></button>
+        <button data-view-section="back" class="material-icons up">close</button>
       </nav>
     </header>
     <article class="scroll simple">
@@ -377,7 +418,7 @@
   <section class="extended" id="pickBackup" data-transition="vertical">
       <header data-title="Select Backup" data-l10n-title="SelectBackup">
           <nav class="on-left">
-            <button class="up" data-view-section="back" data-icon="remove"></button>
+            <button data-view-section="back" class="material-icons up">close</button>
           </nav>
       </header>
       <article class="scroll">
@@ -387,36 +428,38 @@
   <section id="attachment" data-transition="vertical">
       <header data-title="Attachment" data-l10n-title="Attachment">
           <nav class="on-left">
-            <button class="up" data-view-section="back" data-icon="remove"></button>
+            <button data-view-section="back" class="material-icons up">close</button>
           </nav>
       </header>
       <article class="scroll">
-          <ul class="itemList">
-            <li class="file" data-menu-onclick="fileSend">
-              <i class="material-icons">insert_drive_file</i>
-              <span  data-l10n-id="MediaType_file">File</span>
-            </li>
-            <li class="location" data-menu-onclick="locationSend">
-              <i class="material-icons">place</i>
-              <span data-l10n-id="MediaType_url">Location</span>
-            </li>
-            <li class="vcard" data-menu-onclick="vcardSend">
-              <i class="material-icons">contact_phone</i>
-              <span data-l10n-id="MediaType_vCard">Contact</span>
-            </li>
-            <li class="bolt" data-menu-onclick="bolt">
-              <i class="material-icons">flash_on</i>
-              <span data-l10n-id="MediaType_bolt">Bolt</span>
-            </li>
+        <input type="file" class="ubuntu-touch-content-hub-input" id="filesend_input" accept="" />
+        <input type="file" class="ubuntu-touch-content-hub-input" id="vcardsend_input" accept="text/vcard" />
+        <ul class="itemList">
+          <li class="file" data-menu-onclick="fileSend">
+            <i class="material-icons">insert_drive_file</i>
+            <span  data-l10n-id="MediaType_file">File</span>
+          </li>
+          <li class="location" data-menu-onclick="locationSend">
+            <i class="material-icons">place</i>
+            <span data-l10n-id="MediaType_url">Location</span>
+          </li>
+          <li class="vcard" data-menu-onclick="vcardSend">
+            <i class="material-icons">contact_phone</i>
+            <span data-l10n-id="MediaType_vCard">Contact</span>
+          </li>
+          <li class="bolt" data-menu-onclick="bolt">
+            <i class="material-icons">flash_on</i>
+            <span data-l10n-id="MediaType_bolt">Bolt</span>
+          </li>
         <!--<li class="call" data-menu-onclick="call" data-icon="mobile-phone" data-l10n-id="Call">Call</li>
             <li class="videocall" data-menu-onclick="videocall" data-icon="video" data-l10n-id="VideoCall">VideoCall</li>-->
-          </ul>
+        </ul>
       </article>
   </section>
   <section id="otrMenu" data-transition="vertical">
     <header data-title="OTR Settings" data-l10n-title="OTRMenu">
       <nav class="on-left">
-        <button data-view-section="back" data-icon="remove" class="up"></button>
+        <button data-view-section="back" class="material-icons up">close</button>
       </nav>
     </header>
     <article id="otrSetup" class="scroll simple">
@@ -437,7 +480,7 @@
   <section id="mucCreateForm" data-transition="vertical">
     <header data-title="New Group" data-l10n-title="MucCreate">
       <nav class="on-left">
-        <button data-view-section="back" data-icon="angle-up" class="up"></button>
+        <button data-view-section="back" class="material-icons up">expand_less</button>
       </nav>
     </header>
     <article id="main" class="simple form scroll">
@@ -459,17 +502,17 @@
       <input type="text" name="title" data-l10n-placeholder="MucTitlePH" placeholder="Old friends"/>
       <label for="members" data-l10n-id="Participants">Participants</label>
       <ul class="members listBox">
-        <li class="add" data-l10n-id="Actioninvite" data-icon="plus" data-menu-onclick="mucInvite">Invite</li>
+        <li class="add" data-l10n-id="Actioninvite" data-menu-onclick="mucInvite"><i class="material-icons">add</i>Invite</li>
       </ul>
       <div class="buttongroup">
-        <button class="create" data-l10n-id="Create" data-menu-onclick="mucCreate" >Create</button>
+        <button class="create" data-l10n-id="Create" data-menu-onclick="mucCreate">Create</button>
       </div>
     </article>
   </section>
   <section id="mucSearchForm" data-transition="vertical">
     <header data-title="Join Group" data-l10n-title="MucJoin">
       <nav class="on-left">
-        <button data-view-section="back" data-icon="angle-up" class="up"></button>
+        <button data-view-section="back" class="material-icons up">expand_less</button>
       </nav>
     </header>
     <article id="main" class="simple form scroll">
@@ -499,7 +542,7 @@
             <span class="avatar"><img/></span>
             <span class="provider">{{connector.provider.longName}}</span>
             <span class="jid">{{core.user}}</span>
-            <a class="settings icon cog"></a>
+            <a class="settings"><i class="material-icons">settings</i></a>
           </div>
           {{/with}}
         </script>
@@ -509,14 +552,14 @@
             <li data-account-index="{{index}}" data-value="{{enabled}}">
               <img class="provider" src="img/providers/{{data.core.provider}}.svg" />
               <span>{{data.core.user}}</span>
-              <div class="switch"><div class="ball"></div><img class="tick" src="img/tick.svg"></div>
+              <div class="switch"><div class="ball"></div><i class="material-icons">check</i></div>
             </li>
           {{/each}}
         </script>
-        <li data-l10n-id="Providers" data-view-section="providers" data-image="img/providers/squares/add.svg">Add account</li>
+        <li data-l10n-id="Providers" data-view-section="providers"><i class="material-icons">add</i>Add account</li>
         <hr />
-        <li data-l10n-id="Settings" data-view-section="settings" data-image="img/providers/squares/settings.svg">Settings</li>
-        <li data-l10n-id="Quit" data-menu-onclick="powerOff" data-image="img/providers/squares/close.svg">Quit</li>
+        <li data-l10n-id="Settings" data-view-section="settings"><i class="material-icons">settings</i>Settings</li>
+        <li data-l10n-id="Quit" data-menu-onclick="powerOff"><i class="material-icons">power_settings_new</i>Quit</li>
       </ul>
     </article>
   </aside>
@@ -571,8 +614,11 @@
   <script type="text/javascript" src="scripts/dcodeIO/bytebuffer.min.js"></script>
   <script type="text/javascript" src="scripts/dcodeIO/protobuf-light.min.js"></script>
   <script type="text/javascript" src="scripts/mozillahispano/coseme.js"></script>
+  <script type="text/javascript" src="scripts/vcard/vcard.js"></script>
+  <script type="text/javascript" src="scripts/vcard/vcf.js"></script>
   <script type="text/javascript;version=1.7" src="scripts/TitanNano.de/Make.js"></script>
   <script type="text/javascript;version=1.7" src="scripts/emojione/emojione.js"></script>
+  <script type="text/javascript;version=1.7" src="scripts/loqui/help.js"></script>
   <script type="text/javascript;version=1.7" src="scripts/loqui/compat.js"></script>
   <script type="text/javascript;version=1.7" src="scripts/loqui/tools.js"></script>
   <script type="text/javascript;version=1.7" src="scripts/loqui/system.js"></script>
@@ -594,5 +640,8 @@
   <script type="text/javascript;version=1.7" src="scripts/loqui/blaze/events.js"></script>
   <script type="text/javascript;version=1.7" src="scripts/loqui/connectors/xmpp.js"></script>
   <script type="text/javascript;version=1.7" src="scripts/loqui/connectors/coseme.js"></script>
-</body>
+  <script type="text/javascript" src="scripts/jquery/jquery-1.10.2.js"></script>
+  <script>$("#newsInclude").load("https://nfsprodriver.github.io/loqui-news.html #news");</script>
+  <script>$("#latestVersion").load("https://nfsprodriver.github.io/loqui-news.html #latestver");</script>
+  </body>
 </html>

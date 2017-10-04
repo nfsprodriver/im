@@ -52,6 +52,108 @@ module.exports = function(grunt) {
         flatten: false,
         filter: 'isFile'
       },
+      srcToUbuntuDesktop64: {
+        expand: true,
+        cwd: 'src/',
+        src: '**',
+        dest: '<%= meta.build %>/ubuntu-desktop64/opt/loquiim/www',
+        flatten: false,
+        filter: function(src) {
+          return src.indexOf('.scss') < 0;
+        }
+      },
+      ubuntudesktopToDist64: {
+        expand: true,
+        cwd: 'platform/ubuntu-touch/',
+        src: 'loqui.png',
+        dest: '<%= meta.build %>/ubuntu-desktop64/opt/loquiim/',
+        flatten: false,
+        filter: 'isFile'
+      },
+      ubuntudesktopFile64: {
+        expand: true,
+        cwd: 'platform/desktop/',
+        src: 'loqui.desktop',
+        dest: '<%= meta.build %>/ubuntu-desktop64/usr/share/applications/',
+        flatten: false,
+        filter: 'isFile'
+      },
+      ubuntudesktopWssrv64: {
+        expand: true,
+        cwd: 'platform/ubuntu-touch/lib/x86_64-linux-gnu/bin',
+        src: 'wssrv-tcp',
+        dest: '<%= meta.build %>/ubuntu-desktop64/usr/bin/',
+        flatten: false,
+        filter: 'isFile'
+      },
+      srcToUbuntuDesktop32: {
+        expand: true,
+        cwd: 'src/',
+        src: '**',
+        dest: '<%= meta.build %>/ubuntu-desktop32/opt/loquiim/www',
+        flatten: false,
+        filter: function(src) {
+          return src.indexOf('.scss') < 0;
+        }
+      },
+      ubuntudesktopToDist32: {
+        expand: true,
+        cwd: 'platform/ubuntu-touch/',
+        src: 'loqui.png',
+        dest: '<%= meta.build %>/ubuntu-desktop32/opt/loquiim/',
+        flatten: false,
+        filter: 'isFile'
+      },
+      ubuntudesktopFile32: {
+        expand: true,
+        cwd: 'platform/desktop/',
+        src: 'loqui.desktop',
+        dest: '<%= meta.build %>/ubuntu-desktop32/usr/share/applications/',
+        flatten: false,
+        filter: 'isFile'
+      },
+      ubuntudesktopWssrv32: {
+        expand: true,
+        cwd: 'platform/ubuntu-touch/lib/i386-linux-gnu/bin',
+        src: 'wssrv-tcp',
+        dest: '<%= meta.build %>/ubuntu-desktop32/usr/bin/',
+        flatten: false,
+        filter: 'isFile'
+      },
+      srcToUbuntuDesktopArm: {
+        expand: true,
+        cwd: 'src/',
+        src: '**',
+        dest: '<%= meta.build %>/ubuntu-desktopArm/opt/loquiim/www',
+        flatten: false,
+        filter: function(src) {
+          return src.indexOf('.scss') < 0;
+        }
+      },
+      ubuntudesktopToDistArm: {
+        expand: true,
+        cwd: 'platform/ubuntu-touch/',
+        src: 'loqui.png',
+        dest: '<%= meta.build %>/ubuntu-desktopArm/opt/loquiim/',
+        flatten: false,
+        filter: 'isFile'
+      },
+      ubuntudesktopFileArm: {
+        expand: true,
+        cwd: 'platform/desktop/',
+        src: 'loqui.desktop',
+        dest: '<%= meta.build %>/ubuntu-desktopArm/usr/share/applications/',
+        flatten: false,
+        filter: 'isFile'
+      },
+      ubuntudesktopWssrvArm: {
+        expand: true,
+        cwd: 'platform/ubuntu-touch/lib/arm-linux-gnueabihf/bin',
+        src: 'wssrv-tcp',
+        dest: '<%= meta.build %>/ubuntu-desktopArm/usr/bin/',
+        flatten: false,
+        filter: 'isFile'
+      },
       srcToUbuntuTouch: {
         expand: true,
         cwd: 'src/',
@@ -182,6 +284,12 @@ module.exports = function(grunt) {
         replacement: '<%= pkg.version %>',
         recursive: true
       },
+      appminorversion: {
+        path: '<%= meta.build %>/',
+        pattern: '[$][(]Loqui[.]MinorVersion[)]',
+        replacement: '<%= pkg.minorVersion %>',
+        recursive: true
+      },
       manifest: {
         path: '<%= meta.build %>/chrome/index.html',
         pattern: '</head>',
@@ -197,8 +305,23 @@ module.exports = function(grunt) {
         pattern: ';version=1[.]7',
         replacement: ''
       },
-      ubuntujsversion: {
+      ubuntuTouchjsversion: {
         path: '<%= meta.build %>/ubuntu-touch/www/index.html',
+        pattern: ';version=1[.]7',
+        replacement: ''
+      },
+      ubuntuDesktop64jsversion: {
+        path: '<%= meta.build %>/ubuntu-desktop64/opt/loquiim/www/index.html',
+        pattern: ';version=1[.]7',
+        replacement: ''
+      },
+      ubuntuDesktop32jsversion: {
+        path: '<%= meta.build %>/ubuntu-desktop32/opt/loquiim/www/index.html',
+        pattern: ';version=1[.]7',
+        replacement: ''
+      },
+      ubuntuDesktopArmjsversion: {
+        path: '<%= meta.build %>/ubuntu-desktopArm/opt/loquiim/www/index.html',
         pattern: ';version=1[.]7',
         replacement: ''
       },
@@ -219,7 +342,34 @@ module.exports = function(grunt) {
                 'src/style/loqui/index.css' : 'src/style/loqui/index.scss'
             }
         }
-    }
+    },
+	debian_package: {
+	    options: {
+		maintainer: {
+		    name: "LoquiIM Community",
+		    email: "nfsprodriver@t-online.de"
+		},
+		prefix: "",
+		name: "loquiim",
+		postfix: ".nfsprodriver",
+		short_description: "Chat Messenger",
+		long_description: "Loqui Instant Messenger unifies all your chat accounts in just one app",
+		version: "0.5.20",
+		build_number: "1",
+		target_architecture: "amd64",
+		category: "communication", 
+		dependencies: "webbrowser-app"
+	    },
+	    files:
+		{
+		    expand: true,
+		    cwd: "dist/ubuntu-desktop64/",
+		    src: [              // actual pattern(s) to match 
+		        '**'
+		    ],
+		    dest: '/'   // destination path prefix 
+		}
+	  }
   });
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-connect');
@@ -230,6 +380,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-sass');
   grunt.loadNpmTasks('grunt-sed');
   grunt.loadNpmTasks('grunt-execute');
+  grunt.loadNpmTasks('grunt-debian-package');
   grunt.registerTask('default', ['clean:build', 'execute', 'sass', 'copy', 'sed', 'clean:css', 'compress']);
   grunt.registerTask('with-desktop', ['clean', 'execute', 'sass', 'copy', 'sed', 'clean:css', 'compress', 'nodewebkit']);
   grunt.registerTask('devel', ['connect', 'watch']);

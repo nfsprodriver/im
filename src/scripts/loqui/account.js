@@ -160,13 +160,13 @@ var Account = {
   test : function () {
     this.connector.connect({
       connecting: function () {
-        Lungo.Notification.show('globe', _('Connecting'));
+        Lungo.Notification.show('public', _('Connecting'));
       },
       authenticating: function () {
-        Lungo.Notification.show('key', _('SMSsending'));
+        Lungo.Notification.show('vpn_key', _('SMSsending'));
       },
       connected: function () {
-        Lungo.Notification.show('download', _('Synchronizing'));
+        Lungo.Notification.show('file_download', _('Synchronizing'));
         var cb = function () {
           // Don't add an account if already set up
           if (Accounts.find(this.core.fullJid) < 0) {
@@ -184,7 +184,7 @@ var Account = {
             Lungo.Router.section('success');
             this.connector.disconnect();
           } else {
-            //Lungo.Notification.error(_('DupliAccount'), _('DupliAccountNotice'), 'warning-sign', 5);
+            //Lungo.Notification.error(_('DupliAccount'), _('DupliAccountNotice'), 'warning', 5);
           }
           this.save();
         }.bind(this);
@@ -192,7 +192,7 @@ var Account = {
         this.sync(cb);
       }.bind(this),
       authfail: function () {
-        Lungo.Notification.error(_('NoAuth'), _('NoAuthNotice'), 'signal', 5);
+        Lungo.Notification.error(_('NoAuth'), _('NoAuthNotice'), 'settings_input_antenna', 5);
       }
     });
   },
@@ -200,7 +200,7 @@ var Account = {
   /**
    * establishes a connection to the accounts provider.
    */
-  connect : function () {
+  connect : function (cb) {
     if (this._pendingReconnect) {
       clearTimeout(this._pendingReconnect);
       this._pendingReconnect = null;
@@ -236,7 +236,7 @@ var Account = {
           }.bind(this),
           authfail: function () {
             this._initialConnect = false;
-            Lungo.Notification.error(_('NoAuth'), _('NoAuthNotice'), 'signal', 5);
+            Lungo.Notification.error(_('NoAuth'), _('NoAuthNotice'), 'settings_input_antenna', 5);
           }.bind(this),
           connfail: function () {
             if (this.enabled == 'loading') {
@@ -251,6 +251,9 @@ var Account = {
         });
       }
     }
+	if(cb) {
+		cb();
+	}
   },
 
   /**
@@ -328,7 +331,20 @@ var Account = {
         li.detach();
         ul.prepend(li);
       }
-      li.children('.lastMessage').html(chat.core.last.text ? App.emoji[Providers.data[this.core.provider].emoji].fy(Tools.HTMLescape(chat.core.last.text.replace(/\n/g, ' '))) : (chat.core.last.media ? _('SentYou', {type: _('MediaType_' + chat.core.last.media.type)}) : ''));
+	var contact = Lungo.Core.findByProperty(this.core.roster, 'jid', chat.core.last.from);
+	var label = "";
+	if (contact) {
+		label = (contact.name).split(' ')[0] + ': ';
+	} else if (chat.core.last.from == this.core.user){
+	  label = _('Me') + ': ';
+	} else if (chat.core.last.from) {
+	  label = (chat.core.last.from).split('@')[0] + ': ';
+	}
+      var lastMsg = chat.core.last.text ? App.emoji[Providers.data[this.core.provider].emoji].fy(Tools.HTMLescape(chat.core.last.text.replace(/\n/g, ' '))) : (chat.core.last.media ? _('SentYou', {type: _('MediaType_' + chat.core.last.media.type)}) : '');
+      lastMsg = lastMsg.replace(/(\*)([A-Za-z0-9\s]+)(\*)/g, '<b>$2</b>');
+      lastMsg = lastMsg.replace(/(_)([A-Za-z0-9\s]+)(_)/g, '<i>$2</i>');
+      lastMsg = lastMsg.replace(/(~)([A-Za-z0-9\s]+)(~)/g, '<s>$2</s>');
+      li.children('.lastMessage').html(label + lastMsg);
       li.children('.lastStamp').children('date').attr('datetime', chat.core.last.stamp).html(chat.core.last.stamp ? Tools.convenientDate(chat.core.last.stamp).join('<br />') : '');
       li[0].dataset.unread = chat.core.unread;
       li[0].dataset.hidden = chat.core.settings.hidden[0] ? 1 : 0;
@@ -377,14 +393,26 @@ var Account = {
         var chat = this.core.chats[i];
         var name = chat.title;
         var title = App.emoji[Providers.data[this.core.provider].emoji].fy(name);
+		var contact = Lungo.Core.findByProperty(this.core.roster, 'jid', chat.last.from);
+		var label = "";
+		if (contact) {
+			label = (contact.name).split(' ')[0] + ': ';
+        } else if (chat.last.from == this.core.user){
+          label = _('Me') + ': ';
+        } else if (chat.last.from) {
+		  label = (chat.last.from).split('@')[0] + ': ';
+        }
         var lastMsg = chat.last ? (chat.last.text ? App.emoji[Providers.data[this.core.provider].emoji].fy(Tools.HTMLescape(chat.last.text.replace(/\n/g, ' '))) : (chat.last.media ? _('SentYou', {type: _('MediaType_' + chat.last.media.type)}) : '')) : '';
+        lastMsg = lastMsg.replace(/(\*)([A-Za-z0-9\s]+)(\*)/g, '<b>$2</b>');
+        lastMsg = lastMsg.replace(/(_)([A-Za-z0-9\s]+)(_)/g, '<i>$2</i>');
+        lastMsg = lastMsg.replace(/(~)([A-Za-z0-9\s]+)(~)/g, '<s>$2</s>');
         var lastStamp = chat.last.stamp ? Tools.convenientDate(chat.last.stamp).join('<br />') : '';
         var li = $('<li/>');
         li[0].dataset.jid = chat.jid;
         li[0].dataset.unread = chat.unread;
         li.append($('<span/>').addClass('avatar').append('<img/>'));
         li.append($('<span/>').addClass('name').html(title));
-        li.append($('<span/>').addClass('lastMessage').html(lastMsg));
+        li.append($('<span/>').addClass('lastMessage').html(label + lastMsg));
         li.append($('<span/>').addClass('lastStamp').append($('<date/>').attr('datetime', chat.last.stamp).html(lastStamp)));
         li.append($('<span/>').addClass('lastAck'));
         li.append($('<span/>').addClass('show').addClass('backchange'));
@@ -445,6 +473,9 @@ var Account = {
     var frag = f;
     account = this;
     this.contacts = {};
+    if(this.core.roster == undefined && App.platform === "UbuntuTouch"){
+    	this.core.roster = [];
+    }
     this.core.roster.forEach(function (contact, i, roster) {
       var name = contact.name || contact.jid;
       var nameParts = name.toLowerCase().split(' ');
@@ -545,14 +576,15 @@ var Account = {
 
           var show =_('show' + (contact.presence.show || 'na'));
           var time = (contact.presence.show != 'a') && contact.presence.last && Tools.convenientDate(Tools.localize(Tools.stamp(contact.presence.last)));
-          var prefix = time
+		  var prefix = time
             ? _('LastTime', {time: _('DateTimeFormat', {date: time[0], time: time[1]})})
             : show;
 
-          var status = ((contact.presence.status || time) ? (prefix + ' - ') : '') +
-            (contact.presence.status
-             ? App.emoji[Providers.data[this.core.provider].emoji].fy(Tools.HTMLescape(contact.presence.status))
-             : show);
+          var status = ( (time || show == _('showa')) ? prefix : '' ) +
+            ( (contact.presence.status && (time || show == _('showa')) && App.settings.showstat == true) ? (' - ') : '' ) +
+            ( (contact.presence.status && App.settings.showstat == true)
+                ? App.emoji[Providers.data[this.core.provider].emoji].fy(Tools.HTMLescape(contact.presence.status))
+                  : '' );
           header.find('.status').html(status);
         }
       } else {
@@ -638,18 +670,18 @@ var Account = {
     var header = $('<header/>').addClass('beige');
     var input = $('<input/>').attr('id', 'searchInput')
                 .on('input', function (event) {
-                  var ele = event.target;
-                  if(ele.value)
-                    ele.nextSibling.className = '';
+                  var ele = $(event.target);
+                  if(ele.val())
+                    ele.next().removeClass('hidden');
                   else
-                    ele.nextSibling.className = 'hidden';
+                    ele.next().addClass('hidden');
                   account.search(article, this.value, click);
                 });
     var reset = $('<span/>').attr('id', 'reset')
-                .addClass('hidden')
+                .addClass('material-icons hidden').text('cancel')
                 .on('click', function (event) {
-                  this.previousSibling.value = '';
-                  this.className = 'hidden';
+                  $(this).prev().val('');
+                  $(this).addClass('hidden');
                   account.search(article, '', click);
                 });
     header.append(input).append(reset);
@@ -691,7 +723,7 @@ var Account = {
     var matches = roster.filter( function ( contactMap ) {
       return ( text.filter( function ( token ) {
         var regex = new RegExp( token, 'gi' );
-        return contactMap.jid.match( regex ) || contactMap.name.match( regex );
+        return (contactMap.jid && contactMap.jid.match( regex )) || (contactMap.name && contactMap.name.match( regex ));
       } ) || [ ] ).length;
     } );
 
@@ -718,7 +750,7 @@ var Account = {
     function OTRSetup() {
       Lungo.Router.article('otrMenu', 'otrSetup');
       $('button#setupOtr').on('click', function(e) {
-        Lungo.Notification.success(_('OTRKeygen'), _('OTRWait'), 'key', 5);
+        Lungo.Notification.success(_('OTRKeygen'), _('OTRWait'), 'vpn_key', 5);
         Lungo.Router.section('back');
         Lungo.Router.section('main');
         DSA.createInWebWorker({
@@ -730,7 +762,7 @@ var Account = {
             key: account.OTR.key.packPrivate()
           });
           account.save();
-          Lungo.Notification.success(_('OTRKeyReady'), _('OTRKeyReadyDesc'), 'ok', 5);
+          Lungo.Notification.success(_('OTRKeyReady'), _('OTRKeyReadyDesc'), 'check', 5);
           OTRSettings();
         });
       });
@@ -893,7 +925,7 @@ var Account = {
     }, function(e){
         Tools.log('UNABLE TO FIND MESSAGE! CARRY ON', from, msgId, e);
         setTimeout(function(){
-            task.retries = task.retries ? task.retries-1 : 2;
+            task.retries = task.retries ? task.retries-1 : 2;
 
             if (task.retries > 0) {
               Tools.log('GOING TO RETRY!', task.retries, 'RETRIES LEFT');

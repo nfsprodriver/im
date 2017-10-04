@@ -41,13 +41,14 @@ var Tools = {
   convenientDate: function (stamp) {
     var day = this.day(stamp);
     var today = this.day(this.localize(this.stamp()));
+	var yesterday = this.day(this.localize(this.stamp(((new Date().getTime()) / 1000) - 86400)));
     var dayString =
-      day.toString() == today.toString()
-      ?
-        _('Today')
-      :
-        _('DateFormat', {day: day[2], month: day[1]})
-    ;
+      (day.toString() == today.toString()) ?
+        _('Today') : (
+          (day.toString() == yesterday.toString()) ?
+            _('Yesterday') :
+              _('DateFormat', {day: day[2], month: day[1]})
+        );
     return [
       dayString,
       this.hour(stamp)
@@ -220,19 +221,19 @@ var Tools = {
   },
 
   vidThumb: function (blob, width, height, callback) {
-    callback('img/video.png');
+    callback('videocam');
   },
 
   audThumb: function (blob, width, height, callback) {
-    callback('img/audio.png');
+    callback('audiotrack');
   },
 
   locThumb: function (blob, width, height, callback) {
-    callback('img/location.png');
+    callback('location_on');
   },
 
   vcardThumb: function (blob, width, height, callback) {
-    callback('img/contact.png');
+    callback('account_circle');
   },
 
   getFileType: function(type) {

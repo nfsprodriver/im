@@ -2,7 +2,7 @@
 
 /**
 * @file Contains all the bindings
-* @author [Adán Sánchez de Pedro Crespo]{@link https://github.com/aesedepece}
+* @author [AdÃ¡n SÃ¡nchez de Pedro Crespo]{@link https://github.com/aesedepece}
 * @author [Jovan Gerodetti]{@link https://github.com/TitanNano}
 * @author [Christof Meerwald]{@link https://github.com/cmeerw}
 * @author [Giovanny Andres Gongora Granada]{@link https://github.com/Gioyik}
@@ -83,9 +83,15 @@ document.addEventListener("visibilitychange", function() {
   });
 });
 
+//Avatar handling for non FirefoxOS
+$('#avatar_input').change(function() {
+    var image = document.getElementById('avatar_input').files[0];
+    Messenger.avatarSet(image);
+});
+
 // Tap my avatar
 $('section#me #card span.avatar').on('click', function (e) {
-  if (typeof MozActivity != 'undefined') {
+  if (App.platform === "FirefoxOS") {
     var pick = new MozActivity({
       name: 'pick',
       data: {
@@ -99,27 +105,82 @@ $('section#me #card span.avatar').on('click', function (e) {
       Messenger.avatarSet(image.blob);
     };
     pick.onerror = function(){};
+  } else if(App.platform === "UbuntuTouch") {
+	  //Ubuntu Touch: open contentHub
+	  $('#avatar_input').trigger('click');
   } else {
-    Lungo.Notification.error(_('NoDevice'), _('FxOSisBetter', 'exclamation-sign'));
+    Lungo.Notification.error(_('NoDevice'), _('FxOSisBetter', 'warning'));
   }
 });
 
 // Tap contact or muc avatar
 var listener= function(muc){
   var jid= muc ? $('section#muc')[0].dataset.jid : $('section#contact')[0].dataset.jid;
+  var section = muc ? $('section#muc header') : $('section#contact header');
   var avatar= App.avatars[jid];
 
   if(avatar){
     Store.recover((avatar.original || avatar.chunk), function(key, url, free){
       var blob = Tools.b64ToBlob(url.split(',').pop(), url.split(/[:;]/)[1]);
-      new MozActivity({
-        name: "open",
-        data: {
-          type: blob.type,
-          blob: blob
-        }
-      });
-
+      if (App.platform === "FirefoxOS") {
+            	//FirefoxOS
+		return new MozActivity({
+		  name: 'open',
+		  data: {
+			type: blob.type,
+			blob: blob
+		  }
+		});
+	} else if(App.platform === "UbuntuTouch") {
+            	//Ubuntu Touch
+		var h = $(window).height() - 60;
+		var w = $(window).width();
+		var image = document.createElement('img');
+		var prop = new Image();
+		prop.src = url;
+		var propHeight = prop.height;
+		var propWidth = prop.width;
+		image.setAttribute('id', 'image');
+		image.setAttribute('src', url);
+		if(propWidth/propHeight > w/(h - 37)) {
+			image.setAttribute('width', w);
+		} else {
+			image.setAttribute('height', h - 37);
+		}
+		  var notZoomedWidth = image.getAttribute('width');
+		  var notZoomedHeight = image.getAttribute('height');
+		  var closeButton = document.createElement('i');
+		  closeButton.setAttribute('id', 'closeButton');
+		  closeButton.setAttribute('class', 'material-icons md-36');
+		  closeButton.textContent = 'cancel';
+		  var divContainer = document.createElement('div');
+		  divContainer.setAttribute('id', 'preview');
+		  divContainer.appendChild(image);
+		  divContainer.appendChild(closeButton);
+		  section.after(divContainer);
+		  $(closeButton).click(function () {
+			  divContainer.remove();
+		  });
+		  var zoomed = false;
+		  if(propHeight > (h - 37) || propWidth > w) {
+			  $('img#image').click(function () {
+				  if (zoomed) {
+					  closeButton.setAttribute('id', 'closeButton');
+					  divContainer.replaceChild(closeButton, closeButton);
+					  image.setAttribute('width', notZoomedWidth);
+					  image.setAttribute('height', notZoomedHeight);
+				  } else {
+                      if(propHeight > (h - 37)) {				
+                         closeButton.setAttribute('id', 'closeButtonZoomed');
+					     divContainer.replaceChild(closeButton, closeButton);
+                      }					
+                      image.setAttribute('width', propWidth);
+					  image.setAttribute('height', propHeight);
+				  }
+				  zoomed = !zoomed;
+			  });
+		  }
+            }
       free();
     });
   }
@@ -128,9 +189,32 @@ var listener= function(muc){
 $('section#contact #card .avatar').on('click', listener.bind(null, false));
 $('section#muc #card .avatar').on('click', listener.bind(null, true));
 
+//Background handling for non FirefoxOS
+$('#background_input').change(function() {
+    var blob = document.getElementById('background_input').files[0];
+    var account = Accounts.current;
+    var sh = window.innerHeight;
+    Tools.picThumb(blob, null, sh, function (url) {
+      if (account.core.background) {
+        var key = Store.lock(account.core.background);
+        Store.update(key, account.core.background, url);
+        Store.unlock(account.core.background, key);
+      } else {
+        account.core.background = Store.save(url);
+      }
+      Store.recover(account.core.background, function (key, url, free) {
+        $('section#chat ul#messages').css('background-image', 'url('+url+')');
+        $('section.profile div#card').css('background-image', 'url('+url+')');
+        Lungo.Notification.show('star_border', _('backChanged'), 3);
+
+        free();
+      }.bind(this));
+    });
+});
+
 // Change background
 $('section#me #card button.background.change').on('click', function (e) {
-  if (typeof MozActivity != 'undefined') {
+  if (App.platform === "FirefoxOS") {
     e = new MozActivity({
       name: 'pick',
       data: {
@@ -154,7 +238,7 @@ $('section#me #card button.background.change').on('click', function (e) {
         Store.recover(account.core.background, function (key, url, free) {
           $('section#chat ul#messages').css('background-image', 'url('+url+')');
           $('section.profile div#card').css('background-image', 'url('+url+')');
-          Lungo.Notification.show('star', _('backChanged'), 3);
+          Lungo.Notification.show('star_border', _('backChanged'), 3);
 
           free();
         }.bind(this));
@@ -163,8 +247,11 @@ $('section#me #card button.background.change').on('click', function (e) {
     e.onerror = function () {
       Tools.log('Picture selection was canceled');
     };
+  } else if(App.platform === "UbuntuTouch") {
+	  //Ubuntu Touch: open contentHub
+	  $('#background_input').trigger('click');
   } else {
-    Lungo.Notification.error(_('NoDevice'), _('FxOSisBetter', 'exclamation-sign'));
+    Lungo.Notification.error(_('NoDevice'), _('FxOSisBetter', 'warning'));
   }
 });
 
@@ -174,7 +261,7 @@ $('section#me #card button.background.delete').on('click', function (e) {
     Store.blockDrop(account.core.background, function () {
       $('section#chat ul#messages').css('background-image', 'none');
       $('section.profile div#card').css('background-image', 'none');
-      Lungo.Notification.show('star', _('backChanged'), 3);
+      Lungo.Notification.show('star_border', _('backChanged'), 3);
     });
   }
   account.core.background = null;
@@ -231,7 +318,7 @@ var bindings = function () {
   $('section#welcome').on('click', function() {
     Menu.show('providers');
   });
-  
+
   $('section#chat').on('swipeRight', function() {
     Lungo.Router.section('back');
   });
@@ -239,6 +326,15 @@ var bindings = function () {
   $('section#chat ul#messages').on('doubleTap', function(e) {
     e.delegateTarget.scrollTop = e.delegateTarget.scrollHeight;
   });
+
+  $('section#chat article#searchbox input').on('input', function(e) {
+      if ($(this).val()) {
+        $('section#chat article#searchbox span').show();
+      }
+      else {
+        $('section#chat article#searchbox span').hide();
+      }
+    });
 
   $('section#main').on('click', function(e) {
     if($(e.target).hasClass('asided')) {
@@ -300,11 +396,11 @@ var bindings = function () {
       }
     }
   });
-  
+
   window.addEventListener('touchend', function() {
     VoiceRecorder.stop(duration => {
       if (duration < 1) {
-        Lungo.Notification.error(_('HoldToRecordTitle'), _('HoldToRecordBody'), 'info-sign', 10);
+        Lungo.Notification.error(_('HoldToRecordTitle'), _('HoldToRecordBody'), 'info_outline', 10);
       }
     });
   });

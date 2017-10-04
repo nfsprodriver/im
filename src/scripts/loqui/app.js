@@ -38,7 +38,9 @@ var App = {
   * @type {String}
   * @const
   */
-  minorVersion: 'a',
+  minorVersion: '$(Loqui.MinorVersion)',
+
+  platform: '',
 
   /**
   * @type {Connector[]}
@@ -170,6 +172,7 @@ var App = {
       settings: {
         reconnect: true,
         sound: true,
+		showstat: true,
         csn: true,
         boltGet: true,
         readReceipts: true,
@@ -390,6 +393,11 @@ var App = {
   },
 
   init: function () {
+	App.platform = Lungo.Core.environment().os.name;
+
+    if (App.platform === "UbuntuTouch") {
+      App.runtimeApi();
+	  }
     App.defaults.Connector.presence.status = _('DefaultStatus', {
       app: App.name,
       platform: (Lungo.Core.environment().os ? Lungo.Core.environment().os.name : 'PC')
@@ -565,6 +573,12 @@ var App = {
   * @param {string} last
   */
   start: function (last) {
+	if(App.platform === "FirefoxOS") {
+		    emojione.sprites = false;
+		}
+		else {
+			emojione.sprites = true;
+		}
     App.online = App.online;
     emojione.imagePathPNG = '/img/emoji/emojione/';
     // If there is already a configured account
@@ -593,6 +607,9 @@ var App = {
     } else {
       // Show wizard
       Menu.show('providers', null, 500);
+    }
+	  if (App.platform !== "UbuntuTouch") {
+      $('[class^="ubuntu-touch-"]').remove();
     }
   },
 
@@ -802,7 +819,7 @@ var App = {
       Promise.all(jobs).then(function(){
         Lungo.Notification.hide();
         App.requestPassword('Backup', function(password){
-          Lungo.Notification.show('lock', _('EncryptingData'));
+          Lungo.Notification.show('lock_outline', _('EncryptingData'));
           setTimeout(function(){
             Object.keys(chatChunks).forEach(function(key){
               this[key]= CryptoJS.AES.encrypt(JSON.stringify(this[key]), password).toString();
@@ -830,7 +847,7 @@ var App = {
             Store.SD.save(App.pathBackup+'/'+ (new Date()).getTime() +'.backup', blob, function(){
               Lungo.Notification.success(_('Backup'), _('BackupStored'), 'save', 3);
             }, function(e){
-              Lungo.Notification.error(_('Backup'), _('BackupFailed'), 'info-sign', 5);
+              Lungo.Notification.error(_('Backup'), _('BackupFailed'), 'info_outline', 5);
               Tools.log('FAILED TO SAVE THE BACKUP', e, blob);
             });
 
@@ -848,7 +865,7 @@ var App = {
     var restore= function(backupPack){
       App.requestPassword('Restore', function(password){
         var backup= JSON.parse(backupPack);
-        Lungo.Notification.show('unlock', _('DecryptingData'));
+        Lungo.Notification.show('lock_open', _('DecryptingData'));
         setTimeout(function(){
           try{
             Object.keys(backup.chatChunks).forEach(function(key){
@@ -889,7 +906,7 @@ var App = {
 
             if(confirm(_('BackupApplyRequest'))){
               Tools.log('REMOVING CURRENT DATA');
-              Lungo.Notification.show('trash', _('RemovingCurrentData'));
+              Lungo.Notification.show('delete', _('RemovingCurrentData'));
 
               var jobs= [];
 
@@ -898,7 +915,7 @@ var App = {
               }
 
               Promise.all(jobs).then(function(){
-                Lungo.Notification.show('download', _('ApplyingBackup'));
+                Lungo.Notification.show('file_download', _('ApplyingBackup'));
 
                 Store.size= 0;
                 jobs= [];
@@ -976,7 +993,7 @@ var App = {
             }
           }catch(e){
             Tools.log('DECRYPT FAILED', e);
-            Lungo.Notification.error(_('DecryptionFailed'), _('DecryptionFailedLong'), 'info-sign', 4, restore.bind(null, [backupPack]));
+            Lungo.Notification.error(_('DecryptionFailed'), _('DecryptionFailedLong'), 'info_outline', 4, restore.bind(null, [backupPack]));
           }
         }, 100);
       });
@@ -1044,6 +1061,50 @@ var App = {
       Lungo.Router.section('back');
       callback($('section#backupPassword input')[0].value);
     };
-  }
+},
 
-};
+	runtimeApi : function() {	//Ubuntu Touch
+    var trigger = 0;
+  	var userSoundSet;
+
+  	function reconnectApp() {
+      App.settings.sound = false;
+      App.disconnect();
+      App.connect();
+      window.setTimeout(delaySound, 2000);
+      console.log('Reconnected App.');
+
+  		function delaySound() {
+  			App.settings.sound = userSoundSet;
+  		}
+  	}
+
+  	var exec;
+    var lastActive;
+  	var nowActive;
+  	var api = external.getUnityObject('1.0');
+
+    api.RuntimeApi.getApplication(function(application) {
+  	  application.onDeactivated(function() {
+  		  console.log('Event: application deactivated');
+  		  if(trigger == 0 || userSoundSet != App.settings.sound) {
+  			  userSoundSet = App.settings.sound;
+  			  trigger = 1;
+  		  }
+  		  App.settings.sound = userSoundSet;
+  		  lastActive = (new Date()).getTime();
+  		  exec = window.setInterval(reconnectApp, 600000);
+  	  });
+
+  	  application.onActivated(function() {
+  		  console.log('Event: application activated');
+  		  App.settings.sound = userSoundSet;
+  		  clearInterval(exec);
+  		  nowActive = (new Date()).getTime();
+  		  if((nowActive - lastActive) > 100000) {
+  			  reconnectApp();
+  		  }
+      });
+    });
+  }
+ };

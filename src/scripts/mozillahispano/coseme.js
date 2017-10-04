@@ -3377,11 +3377,11 @@ CoSeMe.namespace('config', (function(){
     groupDomain: 'g.us',
 
     tokenData: {
-      "v": "2.16.10", // whatsapp_scratch: e
+      "v": "2.16.12", // whatsapp_scratch: e
       // XXX: it is tokenData[d] + - + tokenData[v] + - + port
-      "r": "S40-2.16.10",
-      "u": "WhatsApp/2.16.10 S40Version/14.26 Device/Nokia302",
-      "t": "1472663857500", // whatsapp_scratch: c
+      "r": "S40-2.16.12",
+      "u": "WhatsApp/2.16.12 S40Version/14.26 Device/Nokia302",
+      "t": "1494451854337", // whatsapp_scratch: c
       "d": "S40"
     },
 
@@ -4014,7 +4014,7 @@ CoSeMe.namespace('utils', (function(){
     deAdjustId: function (s) {
       var id = 0;
       for (var idx in s) {
-        id = (id << 8) + String.charCodeAt(s[idx]);
+        id = (id << 8) + s.charCodeAt(s[idx]);
       }
 
       return id;

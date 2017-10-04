@@ -49,7 +49,7 @@ App.connectors.XMPP = function (account) {
           if (callback.connfail) {
             callback.connfail();
           }
-          Lungo.Notification.error(_('NoAuth'), _('NoAuthNotice'), 'remove-circle', 5);
+          Lungo.Notification.error(_('NoAuth'), _('NoAuthNotice'), 'remove_circle_outline', 5);
           break;
         case Strophe.Status.AUTHENTICATING:
           Tools.log('Authenticating');
@@ -717,7 +717,7 @@ App.logForms.XMPP = function (provider, article) {
               return result;
             });
             if (links.length) {
-              $(article).children('[name="host"]').val(links[0].href);
+              $(article).children('[name="host"]').val("https://" + domain + "/http-bind/");
             }
           };
           xhr.open('GET', 'http://xmppconnect.loqui.im/' + domain + '.json');
