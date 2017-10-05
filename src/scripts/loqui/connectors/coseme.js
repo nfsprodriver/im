@@ -149,6 +149,12 @@ var CosemeConnectorHelper = {
                     "id": 8
                 },
                 {
+                    "rule": "required",
+                    "type": "bytes",
+                    "name": "file_enc_sha256",
+                    "id": 9
+                },
+                {
                     "rule": "optional",
                     "type": "bytes",
                     "name": "jpeg_thumbnail",
@@ -603,6 +609,38 @@ App.connectors.coseme = function (account) {
     buffer.fill(padding);
     buffer.flip();
     return buffer;
+  }
+  
+  function pad (s) {
+	  var y = (16 - s.length % 16) * String.fromCharCode(16 - s.length % 16)
+	  var a = s + new TextEncoder("utf-8").encode(y);
+	  return a;
+  }
+  
+  function digest(str) {
+  // We transform the string into an arraybuffer.
+  var buffer = new TextEncoder("utf-8").encode(str);
+  return crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
+    return hash;
+  });
+}
+  
+  function encryptImg (img, refkey) {
+	  axolotlCrypto.deriveHKDFv3Secrets(refkey, CoSeMe.utils.bytesFromHex('576861747341707020496d616765204b657973'), 112).then(function (derivative) {
+		  var iv = derivative.subarray(0, 16);
+		  var cipherKey = derivative.subarray(16, 48);
+		  var macKey = derivative.subarray(48, 80);
+		  axolotlCrypto.hmac(macKey, iv).then(function (mac) {
+			  axolotlCrypto.encrypt(cipherKey, pad(img), iv).then(function (imgEnc) {
+				  axolotlCrypto.hmac(macKey, iv + imgEnc).then(function (hash) {    //digest()?
+				  var hashDig = digest(hash);
+				  var hashKey = hashDig.subarray(0, 10);
+				  var finalEnc = imgEnc + hashKey;
+				  return finalEnc;
+				  });
+			  });
+		  });
+	  });
   }
 
   function encodeV2Text (text) {
@@ -1472,19 +1510,28 @@ App.connectors.coseme = function (account) {
     this.fileSend = function (jid, blob) {
       var reader = new FileReader();
       reader.addEventListener("loadend", function () {
-        var aB64Hash = CryptoJS.SHA256(reader.result).toString(CryptoJS.enc.Base64);
+        var refkey = axolotlCrypto.randomBytes(32);
+	    //console.log(refkey);
+	    var encBlob = encryptImg(blob, refkey);
+        var aHash = CryptoJS.SHA256(reader.result);
         var aT = blob.type.split("/")[0];
         var aSize = blob.size;
-        var type = blob.type;
-        Tools.blobToBase64(blob, function (aB64OrigHash) {
-          Store.cache[aB64Hash] = {
+		var aSize2 = encBlob.length
+		var sha1 = CryptoJS.SHA256(encBlob);
+		var base64Hash = windows.btoa(digest(sha1));
+		var file_enc_sha256 = digest(sha1);
+		encBlob["mediaKey"] = refkey;
+		encBlob["file_enc_sha256"] = file_enc_sha256;
+        //var type = blob.type;
+        Tools.blobToBase64(encBlob, function (aOrigHash) {
+          Store.cache[aHash] = {
             to: jid,
-            data: aB64OrigHash
+            data: aOrigHash
           };
-          Tools.log('TEMP_STORING', aB64Hash, Store.cache[aB64Hash].data);
+          Tools.log('TEMP_STORING', aHash, Store.cache[aHash].data);
           Lungo.Notification.show('file_upload', _('Uploading'), 3);
           var method = 'media_requestUpload';
-          MI.call(method, [aB64Hash, aT, aSize]);
+          MI.call(method, [aHash, aT, aSize2]);
         });
       });
       reader.readAsBinaryString(blob);
@@ -2391,6 +2438,11 @@ App.connectors.coseme = function (account) {
       var toJID = obj.to;
       var blob = Tools.b64ToBlob(obj.data.split(',').pop(), obj.data.split(/[:;]/)[1]);
       var uploadUrl = url;
+	  
+	  var refkey = axolotlCrypto.randomBytes(32);
+	  console.log(refkey);
+	  var encBlob = encryptImg(blob, refkey);
+	  
       var onSuccess = function (url) {
         thumbnailer(blob, 120, null, function(thumb) {
           var id = MI.call(
@@ -2545,10 +2597,8 @@ App.connectors.coseme = function (account) {
       voiceReq[0].dataset.role= 'submit';
       var codeReady = $('<button/>').addClass('codeReady').css('backgroundColor', data.color).text(_('codeReady'));
       codeReady[0].dataset.role= 'submit';
-	  var helpWA = $('<button/>').addClass('helpWA').text(_('Help'));
-	  helpWA.attr('onclick', 'Lungo.Router.section("helpWA")');
       var back = $('<button/>').addClass('back').text(_('GoBack'));
-      smsButtons.append(smsReq).append(voiceReq).append(codeReady).append(helpWA).append(back);
+      smsButtons.append(smsReq).append(voiceReq).append(codeReady).append(back);
       sms.append(smsButtons);
       var code = $('<div/>').addClass('code hidden')
       .append($('<p>').text(_('recodeLabel')))

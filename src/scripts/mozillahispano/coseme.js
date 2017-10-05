@@ -6913,6 +6913,17 @@ CoSeMe.namespace('yowsup.readerThread', (function() {
                         'admin': (child.getAttributeValue('type')==='admin')};
              }) };
   }
+  
+  /* function handleEncNode(node) {
+	  var recipient_id = node["to"].split('@')[0];
+	  var v2 = node["to"];
+	  if (node.getChild("enc")) {  // media enc is only for v2 messsages
+	    var messageData = processChildNode(node);
+		if (messageData) {
+			var sessionCipher = 
+		}
+	  }
+  } */
 
   /**
    * This is attached to reader.onTree when authenticate success.
@@ -6927,7 +6938,11 @@ CoSeMe.namespace('yowsup.readerThread', (function() {
           var error = 'Invalid or missing iq type: ' + iqType;
           throw error;
         }
-        processNode[iqType](iqType, idx, node);
+		//if (!node.getChild("enc")) {
+          processNode[iqType](iqType, idx, node);
+		/* } else {
+		  handleEncNode(node);
+		} */
 
       } else if (ProtocolTreeNode.tagEquals(node,'presence')) {
         var xmlns = node.getAttributeValue('xmlns');
@@ -7637,10 +7652,12 @@ CoSeMe.namespace('yowsup.readerThread', (function() {
   }
 
   function parseRequestUpload(_hash, iqNode) {
-    var mediaNode = iqNode.getChild("media");
+    var mediaNode = iqNode.getChild("encr_media");
 
     if (mediaNode) {
       var url = mediaNode.getAttributeValue("url");
+	  var mediaKey = mediaNode.getAttributeValue("mediaKey");
+	  var file_enc_sha256 = mediaNode.getAttributeValue("file_enc_sha256");
       var resumeFrom = mediaNode.getAttributeValue("resume");
       if (!resumeFrom) {
         resumeFrom = 0;
@@ -7998,7 +8015,7 @@ CoSeMe.namespace('yowsup.connectionmanager', (function() {
       if (seconds) {
         attributes.seconds = seconds.toString(10);
       }
-      var mmNode = newProtocolTreeNode('media', {
+      var mmNode = newProtocolTreeNode('encr_media', {
         xmlns: 'urn:xmpp:whatsapp:mms',
         type: mediaType,
         file: name,
@@ -8750,24 +8767,24 @@ CoSeMe.namespace('yowsup.connectionmanager', (function() {
       self.state = 0;
     },
 
-    media_requestUpload: function(aB64Hash, aT, aSize, aB64OrigHash) {
+    media_requestUpload: function(aHash, aT, aSize, aOrigHash) {
       var idx = self.makeId('upload_');
 
       // NOTE! TO-DO! parseRequestUpload will have it's arguments REVERSED!
       self.readerThread.requests[idx] =
-        self.readerThread.parseRequestUpload.bind(undefined, aB64Hash);
+        self.readerThread.parseRequestUpload.bind(undefined, aHash);
 
       if (typeof aSize !== 'string') {
         aSize = aSize.toString(10);
       }
 
-      var attribs = {hash: aB64Hash, type: aT, size: aSize};
+      var attribs = {hash: aHash, type: aT, size: aSize};
 
-      if (aB64OrigHash) {
-        attribs.orighash = aB64OrigHash;
+      if (aOrigHash) {
+        attribs.orighash = aOrigHash;
       }
 
-      var mediaNode = newProtocolTreeNode('media', attribs);
+      var mediaNode = newProtocolTreeNode('encr_media', attribs);
       var iqNode = newProtocolTreeNode('iq', {
         id: idx,
         to: 's.whatsapp.net',
