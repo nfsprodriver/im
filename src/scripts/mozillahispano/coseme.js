@@ -6922,6 +6922,12 @@ CoSeMe.namespace('yowsup.readerThread', (function() {
 		if (messageData) {
 			var sessionCipher = 
 		}
+		else {
+		  return node;
+		}
+	  }
+	  else {
+		  return node;
 	  }
   } */
 

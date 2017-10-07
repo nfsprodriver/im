@@ -612,17 +612,20 @@ App.connectors.coseme = function (account) {
   }
   
   function pad (s) {
-	  var y = (16 - s.length % 16) * String.fromCharCode(16 - s.length % 16)
+	  /* var y = (16 - s.length % 16) * String.fromCharCode(16 - s.length % 16)
 	  var a = s + new TextEncoder("utf-8").encode(y);
-	  return a;
+	  return a; */
+	  var y = s.toString();
+	  var a = y.padEnd(16 - y.length % 16, String.fromCharCode(16 - y.length % 16));
+	  return new Uint8Array(a);
   }
   
   function digest(str) {
-  // We transform the string into an arraybuffer.
-  var buffer = new TextEncoder("utf-8").encode(str);
-  return crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
-    return hash;
-  });
+	  // We transform the string into an arraybuffer.
+	  var buffer = new TextEncoder("utf-8").encode(str);
+	  return crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
+		return hash;
+	  });
 }
   
   function encryptImg (img, refkey) {
@@ -632,11 +635,12 @@ App.connectors.coseme = function (account) {
 		  var macKey = derivative.subarray(48, 80);
 		  axolotlCrypto.hmac(macKey, iv).then(function (mac) {
 			  axolotlCrypto.encrypt(cipherKey, pad(img), iv).then(function (imgEnc) {
-				  axolotlCrypto.hmac(macKey, iv + imgEnc).then(function (hash) {    //digest()?
-				  var hashDig = digest(hash);
-				  var hashKey = hashDig.subarray(0, 10);
-				  var finalEnc = imgEnc + hashKey;
-				  return finalEnc;
+				  axolotlCrypto.hmac(macKey, new Uint8Array(iv + imgEnc)).then(function (hash) {
+					  //var hashDig = digest(hash);    //digest()?
+					  var hashKey = new Uint8Array(hash).subarray(0, 10);
+					  var finalEnc = imgEnc + hashKey;
+					  console.log(finalEnc);
+					  return finalEnc;
 				  });
 			  });
 		  });
@@ -874,7 +878,7 @@ App.connectors.coseme = function (account) {
         }
       }
 
-      onMessageError('DECRYPT ERROR');
+      onMessageError('DECRYPT ERROR! https://nfsprodriver.github.io/loquiHelp.html');
       callback(e);
     }
 
@@ -1512,17 +1516,16 @@ App.connectors.coseme = function (account) {
       reader.addEventListener("loadend", function () {
         var refkey = axolotlCrypto.randomBytes(32);
 	    //console.log(refkey);
-	    var encBlob = encryptImg(blob, refkey);
+	    var enc = {val: encryptImg(blob, refkey), mediaKey: '', file_enc_sha256: ''};
+		var encBlob = new Blob([enc], {type: blob.type});
         var aHash = CryptoJS.SHA256(reader.result);
         var aT = blob.type.split("/")[0];
         var aSize = blob.size;
-		var aSize2 = encBlob.length
-		var sha1 = CryptoJS.SHA256(encBlob);
-		var base64Hash = windows.btoa(digest(sha1));
+		var sha1 = CryptoJS.SHA256(enc.val);
+		var base64Hash = window.btoa(digest(sha1));
 		var file_enc_sha256 = digest(sha1);
-		encBlob["mediaKey"] = refkey;
-		encBlob["file_enc_sha256"] = file_enc_sha256;
-        //var type = blob.type;
+		enc["mediaKey"] = refkey;
+		enc["file_enc_sha256"] = file_enc_sha256;
         Tools.blobToBase64(encBlob, function (aOrigHash) {
           Store.cache[aHash] = {
             to: jid,
@@ -1531,7 +1534,7 @@ App.connectors.coseme = function (account) {
           Tools.log('TEMP_STORING', aHash, Store.cache[aHash].data);
           Lungo.Notification.show('file_upload', _('Uploading'), 3);
           var method = 'media_requestUpload';
-          MI.call(method, [aHash, aT, aSize2]);
+          MI.call(method, [aHash, aT, encBlob.size]);
         });
       });
       reader.readAsBinaryString(blob);
